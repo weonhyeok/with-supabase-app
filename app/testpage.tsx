@@ -1,4 +1,3 @@
-// page.tsx
 import { DeployButton } from "@/components/deploy-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
@@ -9,7 +8,6 @@ import { SignUpUserSteps } from "@/components/tutorial/sign-up-user-steps";
 import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
@@ -20,16 +18,10 @@ export default function Home() {
             <div className="flex gap-5 items-center font-semibold">
               <Link href={"/"}>Next.js Supabase Starter</Link>
 
-
-            <div className="flex gap-3">
-              <Button asChild>
-                <Link href="/simple-list">Simple List</Link>
-              </Button>
-
-              <Button asChild>
-                <Link href="/simple-sample">Simple Example</Link>
-              </Button>
-            </div>
+              {/* 🔥 여기에 simple-list 페이지 링크 추가 */}
+              <Link href="/simple-list">Simple List</Link>
+              {/* 🔥 여기에 simple-example 페이지 링크 추가 */}
+              <Link href="/simple-sample">Simple Example</Link>
 
               <div className="flex items-center gap-2">
                 <DeployButton />
@@ -51,15 +43,8 @@ export default function Home() {
 
 
           <div>
-            Check out the following
-            <div className="flex gap-3">
-              <Button asChild>
-                <Link href="/simple-list">Simple List</Link>
-              </Button>
-            </div>
+            To Test
           </div>
-
-          
 
         <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
           <p>

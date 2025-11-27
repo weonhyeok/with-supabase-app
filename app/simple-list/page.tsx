@@ -1,7 +1,8 @@
+// app/simplie-list/page.tsx
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { createClient } from "@/lib/supabase/client"; // or "@/utils/supabase/client"
+import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
 
@@ -12,11 +13,23 @@ type SimpleItem = {
 };
 
 export default function SimpleListPage() {
+  const [session, setSession] = useState<any>(null);
   const [item, setItem] = useState("");
   const [items, setItems] = useState<SimpleItem[]>([]);
   const [loadingAdd, setLoadingAdd] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // 로그인 상태 체크
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   // 리스트 불러오기
   const fetchItems = async () => {
@@ -38,17 +51,23 @@ export default function SimpleListPage() {
     fetchItems();
   }, []);
 
-  // 추가
+  // 항목 추가
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!session) {
+      setError("로그인해야 항목을 추가할 수 있습니다.");
+      return;
+    }
+
     if (!item.trim()) return;
 
     setLoadingAdd(true);
     setError(null);
 
-    const { error } = await supabase
-      .from("simple_list")
-      .insert({ item: item.trim() });
+    const { error } = await supabase.from("simple_list").insert({
+      item: item.trim(),
+    });
 
     if (error) {
       console.error(error);
@@ -61,15 +80,17 @@ export default function SimpleListPage() {
     setLoadingAdd(false);
   };
 
-  // 삭제
+  // 항목 삭제
   const handleDelete = async (id: number) => {
+    if (!session) {
+      setError("로그인해야 항목을 삭제할 수 있습니다.");
+      return;
+    }
+
     setDeletingId(id);
     setError(null);
 
-    const { error } = await supabase
-      .from("simple_list")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("simple_list").delete().eq("id", id);
 
     if (error) {
       console.error(error);
@@ -83,10 +104,17 @@ export default function SimpleListPage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-gray-50 py-10 px-4">
+
+
+    
+
+
+    
+      
       <div className="w-full max-w-md">
         <h1 className="text-2xl font-semibold mb-2">Simple List (공개)</h1>
         <p className="text-sm text-gray-500 mb-6">
-          로그인 없이 누구나 항목을 추가/삭제할 수 있는 예제입니다.
+          로그인 없이 볼 수 있지만, 항목 추가/삭제는 로그인 후 가능합니다.
         </p>
 
         <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
@@ -99,16 +127,14 @@ export default function SimpleListPage() {
           />
           <button
             type="submit"
-            disabled={loadingAdd}
+            disabled={loadingAdd || !session}
             className="rounded-md bg-blue-600 text-white px-4 py-2 text-sm font-medium disabled:opacity-50"
           >
-            {loadingAdd ? "저장 중..." : "추가"}
+            {session ? (loadingAdd ? "저장 중..." : "추가") : "로그인 필요"}
           </button>
         </form>
 
-        {error && (
-          <p className="text-sm text-red-600 mb-3">에러: {error}</p>
-        )}
+        {error && <p className="text-sm text-red-600 mb-3">에러: {error}</p>}
 
         <ul className="space-y-2">
           {items.map((row) => (
@@ -120,23 +146,24 @@ export default function SimpleListPage() {
                 <span>{row.item}</span>
                 <span className="text-[11px] text-gray-400">#{row.id}</span>
               </div>
-              <button
-                onClick={() => handleDelete(row.id)}
-                disabled={deletingId === row.id}
-                className="text-xs rounded-md border border-red-500 text-red-500 px-2 py-1 hover:bg-red-50 disabled:opacity-50"
-              >
-                {deletingId === row.id ? "삭제 중..." : "삭제"}
-              </button>
+              {session && (
+                <button
+                  onClick={() => handleDelete(row.id)}
+                  disabled={deletingId === row.id}
+                  className="text-xs rounded-md border border-red-500 text-red-500 px-2 py-1 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {deletingId === row.id ? "삭제 중..." : "삭제"}
+                </button>
+              )}
             </li>
           ))}
 
           {items.length === 0 && (
-            <li className="text-sm text-gray-500">
-              아직 아무 항목도 없습니다.
-            </li>
+            <li className="text-sm text-gray-500">아직 아무 항목도 없습니다.</li>
           )}
         </ul>
       </div>
     </main>
   );
 }
+
